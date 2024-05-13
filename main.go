@@ -7,7 +7,23 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"time"
 )
+
+func logMiddleware(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		begin := time.Now()
+		log.Println("<-- [%s] %s", r.Method, r.URL)
+		// 记录响应信息
+		rr := httptest.NewRecorder()
+
+		next.ServeHTTP(w, r)
+
+		end := time.Now()
+		elapsed := end.Sub(begin)
+		log.Printf("--> [%s] %d %s +%s", r.Method, rr.Code, r.URL, elapsed)
+	})
+}
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	// 提取target参数
@@ -29,6 +45,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("Access-Control-Allow-Origin", "*")
 	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
 	// w.Header().Set("Access-Control-Allow-Credentials", "true")
+	// OPTIONS请求返回204
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -72,23 +89,6 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 写入响应体
 	io.Copy(w, resp.Body)
-}
-
-// type ResponseWithRecorder struct {
-// 	http.ResponseWriter
-// 	statusCode int
-// 	body       bytes.Buffer
-// }
-
-func logMiddleware(next http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("<-- [%s] %s", r.Method, r.URL)
-		rr := httptest.NewRecorder()
-		defer func() {
-			log.Printf("--> [%s] %d %s", r.Method, rr.Code, r.URL)
-		}()
-		next.ServeHTTP(w, r)
-	})
 }
 
 func main() {
