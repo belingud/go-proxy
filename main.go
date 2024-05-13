@@ -73,5 +73,8 @@ func main() {
 	})
 
 	// 启动服务器
-	log.Fatal(http.ListenAndServe(":9090", nil))
+	if err := http.ListenAndServe(":10000", nil); err != nil {
+		panic(err)
+	}
+	log.Println("Server started on port 10000")
 }
