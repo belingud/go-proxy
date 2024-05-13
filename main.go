@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 func main() {
@@ -15,6 +16,7 @@ func main() {
 			http.Error(w, "Illegal Parameters", http.StatusBadRequest)
 			return
 		}
+		log.Println("target:", target)
 
 		// 解析target参数以支持带查询的URL
 		u, err := url.Parse(target)
@@ -71,10 +73,13 @@ func main() {
 		// 写入响应体
 		io.Copy(w, resp.Body)
 	})
-
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	// 启动服务器
-	if err := http.ListenAndServe(":10000", nil); err != nil {
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		panic(err)
 	}
-	log.Println("Server started on port 10000")
+	log.Println("Server started on port " + port)
 }
