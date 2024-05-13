@@ -93,6 +93,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/proxy", logMiddleware(http.HandlerFunc(proxyHandler)))
+	http.HandleFunc("/proxy/", logMiddleware(http.HandlerFunc(proxyHandler)))
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
