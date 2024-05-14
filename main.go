@@ -13,11 +13,26 @@ import (
 func logMiddleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		begin := time.Now()
-		log.Println("<-- [%s] %s", r.Method, r.URL)
+		log.Printf("<-- [%s] %s", r.Method, r.URL)
 		// 记录响应信息
 		rr := httptest.NewRecorder()
 
-		next.ServeHTTP(w, r)
+		// 添加跨域
+		headers := map[string]string{
+			"Access-Control-Allow-Origin":      r.Header.Get("Origin"),
+			"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+			"Access-Control-Allow-Credentials": "true",
+		}
+		for key, value := range headers {
+			if w.Header().Get(key) == "" {
+				w.Header().Set(key, value)
+			}
+		}
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+		} else {
+			next.ServeHTTP(w, r)
+		}
 
 		end := time.Now()
 		elapsed := end.Sub(begin)
@@ -26,15 +41,6 @@ func logMiddleware(next http.Handler) http.HandlerFunc {
 }
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
-	// 设置CORS响应头
-	// w.Header().Set("Access-Control-Allow-Origin", "*")
-	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
-	// w.Header().Set("Access-Control-Allow-Credentials", "true")
-	// OPTIONS请求返回204
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
 	// 提取target参数
 	target := r.URL.Query().Get("target")
 	if target == "" {
@@ -49,7 +55,6 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid target URL", http.StatusBadRequest)
 		return
 	}
-
 
 	// 创建代理请求
 	proxyReq, err := http.NewRequest(r.Method, u.String(), r.Body)
@@ -96,12 +101,11 @@ func main() {
 	http.HandleFunc("/proxy/", logMiddleware(http.HandlerFunc(proxyHandler)))
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "10000"
 	}
-	log.Println("Got port" + port)
+	log.Println("Server listening on port " + port)
 	// 启动服务器
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		panic(err)
 	}
-	log.Println("Server started on port " + port)
 }
