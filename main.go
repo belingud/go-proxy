@@ -26,6 +26,15 @@ func logMiddleware(next http.Handler) http.HandlerFunc {
 }
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
+	// 设置CORS响应头
+	// w.Header().Set("Access-Control-Allow-Origin", "*")
+	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
+	// w.Header().Set("Access-Control-Allow-Credentials", "true")
+	// OPTIONS请求返回204
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	// 提取target参数
 	target := r.URL.Query().Get("target")
 	if target == "" {
@@ -41,15 +50,6 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 设置CORS响应头
-	// w.Header().Set("Access-Control-Allow-Origin", "*")
-	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
-	// w.Header().Set("Access-Control-Allow-Credentials", "true")
-	// OPTIONS请求返回204
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
 
 	// 创建代理请求
 	proxyReq, err := http.NewRequest(r.Method, u.String(), r.Body)
