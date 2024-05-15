@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func logMiddleware(next http.Handler) http.HandlerFunc {
+func logMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		begin := time.Now()
 		log.Printf("<-- [%s] %s", r.Method, r.URL)
@@ -97,15 +97,20 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/proxy", logMiddleware(http.HandlerFunc(proxyHandler)))
-	http.HandleFunc("/proxy/", logMiddleware(http.HandlerFunc(proxyHandler)))
+	// 创建一个自定义的 ServeMux
+    mux := http.NewServeMux()
+
+	mux.HandleFunc("/proxy", proxyHandler)
+	mux.HandleFunc("/proxy/", proxyHandler)
+	// 使用中间件包装自定义的 ServeMux
+    wrappedMux := logMiddleware(mux)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "10000"
 	}
 	log.Println("Server listening on port " + port)
 	// 启动服务器
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := http.ListenAndServe(":"+port, wrappedMux); err != nil {
 		panic(err)
 	}
 }
