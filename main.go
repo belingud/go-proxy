@@ -73,7 +73,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 发送代理请求
-	resp, err := http.DefaultClient.Do(proxyReq)
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse // 这会让客户端停止重定向
+		},
+	}
+
+	resp, err := client.Do(proxyReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -98,12 +104,12 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// 创建一个自定义的 ServeMux
-    mux := http.NewServeMux()
+	mux := http.NewServeMux()
 
 	mux.HandleFunc("/proxy", proxyHandler)
 	mux.HandleFunc("/proxy/", proxyHandler)
 	// 使用中间件包装自定义的 ServeMux
-    wrappedMux := logMiddleware(mux)
+	wrappedMux := logMiddleware(mux)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "10000"
