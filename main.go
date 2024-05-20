@@ -73,13 +73,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 发送代理请求
-	// client := &http.Client{
-	// CheckRedirect: func(req *http.Request, via []*http.Request) error {
-	// 	return http.ErrUseLastResponse // 这会让客户端停止重定向
-	// },
-	// }
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse // 这会让客户端停止重定向
+		},
+	}
 
-	resp, err := http.DefaultClient.Do(proxyReq)
+	resp, err := client.Do(proxyReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
