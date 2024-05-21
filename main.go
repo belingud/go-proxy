@@ -44,7 +44,8 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	// 提取target参数
 	target := r.URL.Query().Get("target")
 	if target == "" {
-		http.Error(w, "Illegal Parameters", http.StatusBadRequest)
+		w.WriteHeader(http.StatusTeapot)
+		w.Write([]byte("I am a teapot"))
 		return
 	}
 	log.Println("target:", target)
@@ -52,7 +53,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	// 解析target参数以支持带查询的URL
 	u, err := url.Parse(target)
 	if err != nil {
-		http.Error(w, "Invalid target URL", http.StatusBadRequest)
+		http.Error(w, "Invalid Parmas", http.StatusBadRequest)
 		return
 	}
 
